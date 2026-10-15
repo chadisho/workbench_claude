@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Open Workbench</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,700..900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one wide hero with a live miniature of the real bottom tab bar, then ruled sections like a drafting sheet. */
+:root{
+  --bg:#EBEFF2; --surface:#F8FAFB; --ink:#101B23; --muted:#52626D; --line:#C7D0D6;
+  --accent:#0C7A64; --accent-ink:#FFFFFF; --soft:#DDE5EA;
+  --c-flow:#2F6FD6; --c-mind:#0C7A64; --c-docket:#A8680F; --c-notes:#B0407A;
+  --display:'Archivo','Arial Narrow',Arial,sans-serif;
+  --body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0C1317; --surface:#121C22; --ink:#E7EDF0; --muted:#94A4AE; --line:#25343C;
+  --accent:#3FC3A2; --accent-ink:#04201A; --soft:#1A2830;
+  --c-flow:#6FA0F2; --c-mind:#3FC3A2; --c-docket:#E0A24A; --c-notes:#E58AB8;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1317; --surface:#121C22; --ink:#E7EDF0; --muted:#94A4AE; --line:#25343C;
+  --accent:#3FC3A2; --accent-ink:#04201A; --soft:#1A2830;
+  --c-flow:#6FA0F2; --c-mind:#3FC3A2; --c-docket:#E0A24A; --c-notes:#E58AB8;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.wrap{width:100%;max-width:1120px;margin-inline:auto;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px))}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:20px}
+.brand{font:800 18px/1 var(--display);font-stretch:112%;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;text-decoration:none}
+.mark{width:26px;height:26px;border-radius:7px;background:var(--ink);display:grid;place-items:center}
+.mark svg{width:16px;height:16px}
+.mark path{stroke:var(--bg);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 20px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 15px var(--body);text-decoration:none;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.pri:hover{filter:brightness(1.07)}
+.btn.sm{min-height:38px;padding:0 14px;font-size:14px}
+
+.hero{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:48px;align-items:center;padding-block:36px 72px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 18px}
+h1{margin:0 0 20px;font:800 clamp(34px,5.2vw,58px)/1.02 var(--display);font-stretch:116%;letter-spacing:-.025em;text-wrap:balance}
+.lede{margin:0 0 28px;max-width:46ch;font-size:18px;color:var(--muted)}
+.cta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.fine{margin:14px 0 0;font:400 13px var(--mono);color:var(--muted)}
+
+/* miniature */
+.win{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 18px 40px -22px rgba(16,27,35,.45)}
+.stage{height:300px;padding:14px;position:relative;border-bottom:1px solid var(--line);background:
+  linear-gradient(var(--line) 1px,transparent 1px) 0 0/24px 24px,
+  linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/24px 24px;background-color:var(--surface);background-blend-mode:normal}
+.stage::after{content:"";position:absolute;inset:0;background:var(--surface);opacity:.82;pointer-events:none}
+.panel{position:absolute;inset:14px;z-index:1}
+.panel[hidden]{display:none}
+.panel svg{width:100%;height:100%;display:block}
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.tabs button{appearance:none;border:0;background:transparent;color:var(--muted);padding:10px 2px 9px;font:500 11px var(--body);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;box-shadow:inset 0 2px 0 transparent}
+.tabs button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 2px 0 var(--k)}
+.cap{margin:10px 2px 0;font:400 12px var(--mono);color:var(--muted)}
+
+/* svg parts */
+.nd{fill:var(--surface);stroke:var(--ink);stroke-width:1.5}
+.tx{fill:var(--ink);font:500 13px var(--body)}
+.ln{fill:none;stroke:var(--muted);stroke-width:1.5}
+.mk{fill:var(--muted)}
+.lb{fill:var(--muted);font:500 11px var(--mono)}
+
+/* docket panel */
+.board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;height:100%}
+.col{background:var(--soft);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.col h4{margin:0 0 2px;font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.35}
+.card small{display:block;margin-top:3px;font:400 11px var(--mono);color:var(--muted)}
+/* notes panel */
+.nt{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;height:100%}
+.nt ul{margin:0;padding:8px;list-style:none;background:var(--soft);border-radius:10px;font-size:13px;display:flex;flex-direction:column;gap:2px}
+.nt li{padding:5px 8px;border-radius:6px}
+.nt li.on{background:var(--surface);font-weight:600}
+.nt article{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.55;overflow:hidden}
+.nt h4{margin:0 0 6px;font:800 16px var(--display)}
+.lk{color:var(--c-notes);font-weight:600}
+
+/* sections */
+section{border-top:1px solid var(--line);padding-block:64px}
+h2{margin:0 0 12px;font:800 clamp(26px,3.4vw,38px)/1.08 var(--display);font-stretch:112%;letter-spacing:-.02em;text-wrap:balance}
+.sub{margin:0 0 36px;max-width:60ch;color:var(--muted);font-size:17px}
+.apps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.app{padding:24px 22px 26px;border-right:1px solid var(--line);min-width:0}
+.app:last-child{border-right:0}
+.app i{display:block;width:34px;height:4px;border-radius:2px;background:var(--k);margin-bottom:18px}
+.app h3{margin:0 0 8px;font:800 20px var(--display);font-stretch:108%;letter-spacing:-.01em}
+.app p{margin:0 0 14px;color:var(--muted);font-size:15px}
+.app .fm{font:400 12px var(--mono);color:var(--muted);margin:0}
+
+.src{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.s{padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface);min-width:0}
+.s h3{margin:0 0 6px;font:600 17px var(--body)}
+.s p{margin:0;color:var(--muted);font-size:15px}
+.tag{display:inline-block;margin-top:12px;padding:2px 9px;border-radius:99px;border:1px solid var(--line);font:500 11px var(--mono);color:var(--muted)}
+.edit{margin-top:28px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.edit .s{background:transparent}
+
+.steps{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;counter-reset:st}
+.steps li{counter-increment:st;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface);min-width:0}
+.steps li::before{content:counter(st);display:grid;place-items:center;width:30px;height:30px;margin-bottom:14px;border-radius:50%;background:var(--ink);color:var(--bg);font:600 13px var(--mono)}
+.steps h3{margin:0 0 6px;font:600 17px var(--body)}
+.steps p{margin:0;color:var(--muted);font-size:15px}
+
+.facts{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 48px}
+.facts dt{font:600 15px var(--body);margin-bottom:4px}
+.facts dd{margin:0;color:var(--muted);font-size:15px}
+
+.end{padding-block:72px 40px;text-align:left;border-top:1px solid var(--line)}
+.end h2{max-width:20ch}
+footer{padding-block:0 48px;color:var(--muted);font:400 13px var(--mono)}
+
+@media (max-width:900px){
+  .hero{grid-template-columns:minmax(0,1fr);gap:36px;padding-block:20px 48px}
+  .apps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app:nth-child(2){border-right:0}
+  .app:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .src,.steps{grid-template-columns:minmax(0,1fr)}
+  .edit,.facts{grid-template-columns:minmax(0,1fr)}
+  section{padding-block:48px}
+}
+@media (max-width:520px){
+  .apps{grid-template-columns:minmax(0,1fr)}
+  .app{border-right:0;border-bottom:1px solid var(--line)}
+  .app:last-child{border-bottom:0}
+  .nt{grid-template-columns:96px minmax(0,1fr)}
+  .stage{height:280px}
+  .btn{width:100%;justify-content:center}
+  .btn.sm{width:auto}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#top" id="top"><span class="mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h16"/></svg></span>Open Workbench</a>
+    <a class="btn pri sm" href="https://claude.ai/artifact/FEAjsNizackZJE7u1umWSy" target="_blank" rel="noopener">Open Workbench</a>
+  </header>
+
+  <div class="hero">
+    <div>
+      <p class="eyebrow">For diagrams, maps, tasks and notes</p>
+      <h1>Four working tools behind one tab bar.</h1>
+      <p class="lede">Open Workbench puts Flow Studio, Mind Map, Docket and Knowledge Manager in one panel. Open and save files from Dropbox, Google Drive and your own computer without leaving it.</p>
+      <div class="cta">
+        <a class="btn pri" href="https://claude.ai/artifact/FEAjsNizackZJE7u1umWSy" target="_blank" rel="noopener">Open Workbench</a>
+        <a class="btn" href="#apps">See the four apps</a>
+      </div>
+      <p class="fine">Sign in with your Claude account to use it.</p>
+    </div>
+    <div>
+      <div class="win">
+        <div class="stage">
+          <div class="panel" id="p-flow" role="tabpanel" aria-label="Flow Studio preview">
+            <svg viewBox="0 0 480 272" role="img" aria-label="A small flowchart: Order in, then an In stock decision, leading to Ship or Reorder">
+              <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0 1L9 5L0 9z"/></marker></defs>
+              <rect class="nd" x="14" y="106" width="96" height="44" rx="8"/><text class="tx" x="62" y="133" text-anchor="middle">Order in</text>
+              <polygon class="nd" points="205,86 275,128 205,170 135,128"/><text class="tx" x="205" y="133" text-anchor="middle">In stock?</text>
+              <path class="ln" d="M110 128H131" marker-end="url(#ar)"/>
+              <path class="ln" d="M275 128H302V76H328" marker-end="url(#ar)"/>
+              <path class="ln" d="M275 128H302V196H328" marker-end="url(#ar)"/>
+              <text class="lb" x="306" y="68">yes</text><text class="lb" x="306" y="214">no</text>
+              <rect class="nd" x="330" y="54" width="120" height="44" rx="8"/><text class="tx" x="390" y="81" text-anchor="middle">Ship today</text>
+              <rect class="nd" x="330" y="174" width="120" height="44" rx="8"/><text class="tx" x="390" y="201" text-anchor="middle">Reorder stock</text>
+            </svg>
+          </div>
+          <div class="panel" id="p-mind" role="tabpanel" aria-label="Mind Map preview" hidden>
+            <svg viewBox="0 0 480 272" role="img" aria-label="A small mind map with Launch plan in the center and five branches">
+              <path class="ln" d="M190 136C150 136 140 56 112 56"/><path class="ln" d="M190 136C160 136 150 136 112 136"/><path class="ln" d="M190 136C150 136 140 216 112 216"/>
+              <path class="ln" d="M290 136C330 136 340 76 368 76"/><path class="ln" d="M290 136C330 136 340 196 368 196"/>
+              <ellipse class="nd" cx="240" cy="136" rx="54" ry="28"/><text class="tx" x="240" y="141" text-anchor="middle">Launch plan</text>
+              <rect class="nd" x="20" y="40" width="92" height="32" rx="16"/><text class="tx" x="66" y="61" text-anchor="middle">Audience</text>
+              <rect class="nd" x="20" y="120" width="92" height="32" rx="16"/><text class="tx" x="66" y="141" text-anchor="middle">Budget</text>
+              <rect class="nd" x="20" y="200" width="92" height="32" rx="16"/><text class="tx" x="66" y="221" text-anchor="middle">Risks</text>
+              <rect class="nd" x="368" y="60" width="92" height="32" rx="16"/><text class="tx" x="414" y="81" text-anchor="middle">Timeline</text>
+              <rect class="nd" x="368" y="180" width="92" height="32" rx="16"/><text class="tx" x="414" y="201" text-anchor="middle">Channels</text>
+            </svg>
+          </div>
+          <div class="panel" id="p-docket" role="tabpanel" aria-label="Docket preview" hidden>
+            <div class="board">
+              <div class="col"><h4>To do</h4><div class="card">Draft the price list<small>Due Thu</small></div><div class="card">Call the supplier<small>Due Fri</small></div></div>
+              <div class="col"><h4>Doing</h4><div class="card">Update the stock sheet<small>Today</small></div></div>
+              <div class="col"><h4>Done</h4><div class="card">Send last month's report<small>Mon</small></div><div class="card">Book the courier<small>Mon</small></div></div>
+            </div>
+          </div>
+          <div class="panel" id="p-notes" role="tabpanel" aria-label="Knowledge Manager preview" hidden>
+            <div class="nt">
+              <ul><li>Home</li><li class="on">Suppliers</li><li>Pricing</li><li>Meeting notes</li></ul>
+              <article><h4>Suppliers</h4>Terms and contacts live here. Reorder rules are in <span class="lk">[[Pricing]]</span> and last week's call is in <span class="lk">[[Meeting notes]]</span>.<br><br>Links between notes show up in a rail on the side.</article>
+            </div>
+          </div>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Preview an app">
+          <button role="tab" aria-selected="true" aria-controls="p-flow" data-p="flow" style="--k:var(--c-flow)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="7" height="5" rx="1.2"/><rect x="14" y="15" width="7" height="5" rx="1.2"/><path d="M6.5 9v3.5a2 2 0 0 0 2 2H14"/></svg>Flow</button>
+          <button role="tab" aria-selected="false" aria-controls="p-mind" data-p="mind" style="--k:var(--c-mind)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.6"/><circle cx="4.5" cy="5.5" r="1.7"/><circle cx="19.5" cy="5.5" r="1.7"/><circle cx="4.5" cy="18.5" r="1.7"/><circle cx="19.5" cy="18.5" r="1.7"/><path d="M6 6.7l4 3.6M18 6.7l-4 3.6M6 17.3l4-3.6M18 17.3l-4-3.6"/></svg>Maps</button>
+          <button role="tab" aria-selected="false" aria-controls="p-docket" data-p="docket" style="--k:var(--c-docket)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 9l1.6 1.6L12.5 7.5M8 15h8"/></svg>Docket</button>
+          <button role="tab" aria-selected="false" aria-controls="p-notes" data-p="notes" style="--k:var(--c-notes)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5M8.5 13h7M8.5 16.5h5"/></svg>Notes</button>
+        </div>
+      </div>
+      <p class="cap">Illustration of the layout. The apps open full size in the real thing.</p>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="apps">
+    <h2>Pick up any of the four from the tab bar</h2>
+    <p class="sub">Each app is a full tool of its own, and switching between them is one tap on the bar at the bottom.</p>
+    <div class="apps">
+      <div class="app" style="--k:var(--c-flow)"><i></i><h3>Flow Studio</h3><p>Flowcharts and BPMN diagrams with tabs for several diagrams at once.</p><p class="fm">Exports JSON, BPMN, SVG, PNG</p></div>
+      <div class="app" style="--k:var(--c-mind)"><i></i><h3>Mind Map</h3><p>Mind maps you can fold, group into tabs and bring in from XMind files.</p><p class="fm">Opens .xmind files</p></div>
+      <div class="app" style="--k:var(--c-docket)"><i></i><h3>Docket</h3><p>Task lists with a list view, a kanban board and a detail panel.</p><p class="fm">List and board views</p></div>
+      <div class="app" style="--k:var(--c-notes)"><i></i><h3>Knowledge Manager</h3><p>A vault of linked Markdown notes with tabs, search and a rail of links.</p><p class="fm">Plain Markdown files</p></div>
+    </div>
+  </section>
+
+  <section id="files">
+    <h2>One Files tab for all your storage</h2>
+    <p class="sub">Open a diagram from Dropbox in Flow Studio, save a map to Google Drive, or edit a note that lives in a folder on your computer. The Files tab is where it all meets.</p>
+    <div class="src">
+      <div class="s"><h3>This browser</h3><p>Files you save here stay on the device you are using, so the page works with no connections at all.</p></div>
+      <div class="s"><h3>Dropbox</h3><p>Browse your folders, open text files in an app, and save exports as new files.</p><span class="tag">Connect once in Claude</span></div>
+      <div class="s"><h3>Google Drive</h3><p>Browse your Drive, open files in an app and save exports back as new files.</p><span class="tag">Connect once in Claude</span></div>
+      <div class="s"><h3>Local files</h3><p>Browse the folders your Claude desktop app is allowed to see, then edit and save straight back to the file on your computer.</p><span class="tag">Claude desktop app only</span></div>
+      <div class="s"><h3>This computer</h3><p>Pick a folder in any browser to read a copy of it, edit text files and download the result.</p><span class="tag">Read-only copy</span></div>
+    </div>
+    <div class="edit">
+      <div class="s"><h3>Edit text files where they are</h3><p>Open a text, Markdown, CSV or JSON file from Dropbox, Drive or your computer, change it, then choose Save as new copy or Replace original.</p></div>
+      <div class="s"><h3>Nothing is replaced without a confirm</h3><p>Replacing an original always asks first and tells you what happens to the old file before it does anything.</p></div>
+    </div>
+  </section>
+
+  <section id="start">
+    <h2>Start in about a minute</h2>
+    <p class="sub">There is no separate account for Open Workbench. It runs inside Claude.</p>
+    <ol class="steps">
+      <li><h3>Open the link</h3><p>Choose Open Workbench on this page. It opens in a new tab on claude.ai.</p></li>
+      <li><h3>Sign in to Claude</h3><p>Sign-in happens on claude.ai. Open Workbench never sees your password.</p></li>
+      <li><h3>Allow your storage</h3><p>Connect Dropbox or Google Drive once in Claude's settings, then allow the page to use them from the Files tab.</p></li>
+    </ol>
+  </section>
+
+  <section id="notes">
+    <h2>What to know before you open it</h2>
+    <dl class="facts">
+      <div><dt>You need a Claude account</dt><dd>The page runs inside claude.ai, so you sign in there first.</dd></div>
+      <div><dt>Your work stays with you</dt><dd>Work you do on the public link is saved in your own browser, unless you save files to Dropbox or Drive.</dd></div>
+      <div><dt>You choose each connection</dt><dd>The page asks before it uses Dropbox, Google Drive or local files, and you can manage them in Claude.</dd></div>
+      <div><dt>Local files need the desktop app</dt><dd>Open Workbench in the Claude desktop app with the Filesystem extension turned on to use that tab.</dd></div>
+    </dl>
+  </section>
+
+  <div class="end">
+    <h2>Open the workbench and start a diagram.</h2>
+    <div class="cta"><a class="btn pri" href="https://claude.ai/artifact/FEAjsNizackZJE7u1umWSy" target="_blank" rel="noopener">Open Workbench</a></div>
+  </div>
+  <footer>Open Workbench runs inside Claude.</footer>
+</div>
+
+<script>
+(function(){
+  var tabs=[].slice.call(document.querySelectorAll('.tabs [role=tab]'));
+  function pick(k){
+    tabs.forEach(function(b){var on=b.dataset.p===k;b.setAttribute('aria-selected',on?'true':'false');b.tabIndex=on?0:-1});
+    ['flow','mind','docket','notes'].forEach(function(n){var p=document.getElementById('p-'+n);if(p)p.hidden=(n!==k)});
+  }
+  tabs.forEach(function(b,i){
+    b.addEventListener('click',function(){pick(b.dataset.p)});
+    b.addEventListener('keydown',function(e){
+      var d=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(!d)return;
+      var n=tabs[(i+d+tabs.length)%tabs.length];n.focus();pick(n.dataset.p);e.preventDefault();
+    });
+  });
+  pick('flow');
+})();
+</script>
+</body>
+</html>
